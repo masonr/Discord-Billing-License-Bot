@@ -8,7 +8,7 @@ Simple Discord bot that will verify [WHMCS](https://www.whmcs.com/members/verify
   * [Beautiful Soup Python module](https://pypi.org/project/beautifulsoup4/)
 * Admin permissions on Discord server
 
-## Instructions
+## Bot Invite/Hosting Instructions
 
 ### Invite Hosted Bot
 
@@ -26,6 +26,24 @@ I am hosting this bot on a server, thus it can be invited to your server easily 
 3. Invite the bot to your server
 
 _The bot does not require any special permissions_
+
+## Bot Commands and Usage
+
+### Usage:  
+    !command [domain]   
+    !command help   
+    
+### Commands:   
+    !license - checks WHMCS and Blesta license validity   
+    !licence - (same as above)     
+    !whmcs - checks WHMCS license validity   
+    !blesta - checks Blesta license validity  
+    
+### Examples:  
+    !license google.com  
+    !whmcs unknown.host  
+    !blesta billing.hostingcompany.net  
+    !license help  
 
 ## License
 ```
