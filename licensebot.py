@@ -94,6 +94,7 @@ def create_embed(domain, result, license_type):
         embed.set_thumbnail(url = "https://files.rowe.sh/license-bot/images/invalid.png")
     # error has occured
     else:
+        embed.description = "An error has occurred. Please note that the domain given as an argument must not include the preceding scheme (http:// or https://) nor a subdomain of 'www.' (i.e. to check the license status of http://www.host.net, run `!license host.net`)"
         embed.add_field(name='Status', value='Error', inline=False)
         embed.set_thumbnail(url = "https://files.rowe.sh/license-bot/images/error.png")
     # add license type checked
