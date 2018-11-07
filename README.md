@@ -32,18 +32,20 @@ _The bot does not require any special permissions_
 ### Usage:  
     !command [domain]   
     !command help   
-    
+
 ### Commands:   
     !license - checks WHMCS and Blesta license validity   
     !licence - (same as above)     
     !whmcs - checks WHMCS license validity   
     !blesta - checks Blesta license validity  
-    
+
 ### Examples:  
     !license google.com  
     !whmcs unknown.host  
     !blesta billing.hostingcompany.net  
     !license help  
+
+**Note: The domain given as an argument must not include the preceding scheme (http:// or https://) nor a subdomain of "www." (i.e. to check the license status of http://www.host.net, run `!license host.net`)**
 
 ## License
 ```

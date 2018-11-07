@@ -56,7 +56,7 @@ def check_domain(domain, panel):
 
     # HTTP POST message has been staged, now send POST to the corresponding license verification page
     try:
-        r = requests.post(url = url, data = data, cookies = cookies, timeout=5)
+        r = requests.post(url = url, data = data, cookies = cookies, timeout=10)
     except requests.exceptions.RequestException as e:
         # error encountered - print error in console and return error status
         print(e)
@@ -81,8 +81,8 @@ def check_domain(domain, panel):
 #     - license_type: the type of billing panel license checked
 #   Returns: An embed object to place in the Discord response
 def create_embed(domain, result, license_type):
-    # add title with link to entered domain
-    embed = discord.Embed(title = "License Verification Summary for " + domain, url = "http://" + domain)
+    # add title to response
+    embed = discord.Embed(title = "License Verification Summary for " + domain)
     embed.add_field(name='Domain', value=domain, inline=False) # display entered domain
     # license is valid
     if (result == 'Valid'):
