@@ -21,7 +21,8 @@ TOKEN = 'REDACTED_REPLACE-WITH-YOUR-TOKEN'
 client = discord.Client()
 
 # check_domain()
-#   Purpose: Add a worker to the active workers array
+#   Purpose: Checks the provided domain against the specified panel to determine the validity of the
+#            license for that domain.
 #   Params:
 #     - domain: the billing domain of the host
 #     - panel: the type of billing panel license to validate against
