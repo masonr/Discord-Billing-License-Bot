@@ -1,6 +1,8 @@
 # Discord-Billing-License-Bot
 Simple Discord bot that will verify [WHMCS](https://www.whmcs.com/members/verifydomain.php) and [Blesta](https://account.blesta.com/client/plugin/license_verify/) billing panel licenses
 
+**Important Note**: WHMCS license verification functionality is currently broken see Issue #1 for more details.
+
 ## Prerequisites
 
 * Python 3 (tested with v3.6.6, should work for 3.5+)
