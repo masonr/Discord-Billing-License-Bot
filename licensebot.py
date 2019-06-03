@@ -2,7 +2,7 @@
 # Author: Mason Rowe <mason@rowe.sh>
 # Project: Host Billing License Verification Discord Bot
 # License: WTFPL <http://www.wtfpl.net/>
-# Last Updated: 07 Nov 2018
+# Last Updated: 02 Jun 2019
 #
 # Purpose: A simple Discord bot that will verify WHMCS and Blesta Billing Panel licenses
 #          to ensure hosts are not using nulled/cracked billing panels
@@ -17,6 +17,10 @@ from bs4 import BeautifulSoup
 # Host Billing License Verification Discord Bot Token
 # !!! KEEP TOKEN PRIVATE OR BOT MAY BE COMPROMISED !!!
 TOKEN = 'REDACTED_REPLACE-WITH-YOUR-TOKEN'
+WHMCS_USER = 'REDACTED_REPLACE-WITH-YOUR-USERNAME' # WHMCS.com account email
+WHMCS_PASS = 'REDACTED_REPLACE-WITH-YOUR-PASSWORD' # WHMCS.com account password (some special characters might have issues)
+WHMCS_COOKIE = '' # (leave blank) WHMCS session cookie
+WHMCS_COOKIE_MODIFIED = datetime.datetime.utcnow() # WHMCS session cookie last updated time
 # Initialize Discord client
 client = discord.Client()
 
@@ -28,11 +32,18 @@ client = discord.Client()
 #     - panel: the type of billing panel license to validate against
 #   Returns: The result of the license check ('Valid', 'Invalid', or 'Error')
 def check_domain(domain, panel):
+    # declare use of global variables (or else local copies will be made)
+    global WHMCS_USER, WHMCS_PASS, WHMCS_COOKIE, WHMCS_COOKIE_MODIFIED
+
     # WHMCS License Check
     if (panel == 'whmcs'):
         url = 'https://www.whmcs.com/members/verifydomain.php'
         data = { 'domain': domain }
-        cookies = {} # no cookies required for WHMCS lookups
+        # get WHMCS session token
+        sesh_token = get_whmcs_cookie()
+        if (sesh_token == 'Error'):
+            return 'Error'
+        cookies = { 'WHMCSXbAkzYLZLCZ4': sesh_token }
     # Blesta License Check
     elif (panel == 'blesta'):
         url = 'https://account.blesta.com/client/plugin/license_verify/'
@@ -73,6 +84,48 @@ def check_domain(domain, panel):
     else:
         # Error (neither success nor failed text found in POST response)
         return 'Error'
+
+# get_whmcs_cookie()
+#   Purpose: Get WHMCS session cookie to bypass reCAPTCHA requirement on forms. Updates cookie if it is out of date.
+#   Params: (none)
+#   Returns: A string containing the WHMCS cookie value for the current active session
+def get_whmcs_cookie():
+    # declare use of global variables (or else local copies will be made)
+    global WHMCS_USER, WHMCS_PASS, WHMCS_COOKIE, WHMCS_COOKIE_MODIFIED
+
+    # check if cookie is unset (initial startup) or is expired (1+ hours old)
+    if (WHMCS_COOKIE == '' or datetime.datetime.utcnow() > (WHMCS_COOKIE_MODIFIED + datetime.timedelta(hours=1))):
+        # WHMCS cookie needs updating
+        # need to get new WHMCS session, but first we need a temporary cookie
+        url = 'https://www.whmcs.com/members/clientarea.php'
+        try:
+            s = requests.get(url)
+        except requests.exceptions.RequestException as e:
+            # error encountered - print error in console and return error status
+            print(e)
+            return 'Error'
+        # extract temp WHMCS cookie value from response's cookies
+        c_val = s.cookies['WHMCSXbAkzYLZLCZ4']
+        cookies = { 'WHMCSXbAkzYLZLCZ4': c_val } # add WHMCS cookie value to cookies
+        # prepare WHMCS username and password for login
+        data = { 'username': WHMCS_USER, 'password': WHMCS_PASS }
+        # create new http session
+        sesh = requests.Session()
+        # change url to WHMCS login page (no reCAPTCHA requirement)
+        url = 'https://www.whmcs.com/members/dologin.php'
+        # HTTP POST message has been staged, now send POST to the WHMCS login page
+        try:
+            sesh.post(url = url, data = data, cookies = cookies, timeout=10)
+            # extract new WHMCS session cookie
+            WHMCS_COOKIE = sesh.cookies['WHMCSXbAkzYLZLCZ4']
+            # update last session cookie modified time
+            WHMCS_COOKIE_MODIFIED = datetime.datetime.utcnow()
+        except requests.exceptions.RequestException as e:
+            # error encountered - print error in console and return error status
+            print(e)
+            return 'Error'
+    # we either have a non-expired session or retrieved a new session cookie, return it
+    return WHMCS_COOKIE
 
 # create_embed()
 #   Purpose: Create the Discord embed object that will be displayed with the license check results
