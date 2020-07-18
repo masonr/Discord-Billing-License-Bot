@@ -197,8 +197,13 @@ async def on_message(message):
             # if return message is set, return the error/help message and exit
             await client.send_message(message.channel, return_msg)
             return
-        # extract domain from message
-        domain = message_split[1]
+        # extract domain from message and santize common mistakes
+        domain = message_split[1].replace('http://','').replace('https://','')
+        if (domain[:4] == 'www.'):
+            domain = domain[4:]
+        if (domain[-1] == '/'):
+            domain = domain[:-1]
+        
     else:
         # terminate early if message is not a bot command
         return
