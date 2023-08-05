@@ -2,12 +2,12 @@
 # Author: Mason Rowe <mason@rowe.sh>
 # Project: Host Billing License Verification Discord Bot
 # License: WTFPL <http://www.wtfpl.net/>
-# Last Updated: 02 Jun 2019
+# Last Updated: 05 Aug 2023
 #
 # Purpose: A simple Discord bot that will verify WHMCS and Blesta Billing Panel licenses
 #          to ensure hosts are not using nulled/cracked billing panels
 #
-# Tested Python version: v3.6.6
+# Tested Python version: v3.11.2
 
 import discord
 import requests
@@ -22,7 +22,9 @@ WHMCS_PASS = 'REDACTED_REPLACE-WITH-YOUR-PASSWORD' # WHMCS.com account password 
 WHMCS_COOKIE = '' # (leave blank) WHMCS session cookie
 WHMCS_COOKIE_MODIFIED = datetime.datetime.utcnow() # WHMCS session cookie last updated time
 # Initialize Discord client
-client = discord.Client()
+intents = discord.Intents.default()
+intents.message_content = True
+client = discord.Client(intents=intents)
 
 # check_domain()
 #   Purpose: Checks the provided domain against the specified panel to determine the validity of the
@@ -60,8 +62,8 @@ def check_domain(domain, panel):
         csrftoken = soup.find('input', dict(name='_csrf_token'))['value']
         data = { 'search': domain, '_csrf_token': csrftoken }
         # extract sid from response's cookies
-        sid = s.cookies['sid']
-        cookies = { 'sid': sid } # add sid to cookies
+        sid = s.cookies['blesta_sid']
+        cookies = { 'blesta_sid': sid } # add sid to cookies
     # Unknown License Check
     else:
         return 'Error'
@@ -93,8 +95,8 @@ def get_whmcs_cookie():
     # declare use of global variables (or else local copies will be made)
     global WHMCS_USER, WHMCS_PASS, WHMCS_COOKIE, WHMCS_COOKIE_MODIFIED
 
-    # check if cookie is unset (initial startup) or is expired (1+ hours old)
-    if (WHMCS_COOKIE == '' or datetime.datetime.utcnow() > (WHMCS_COOKIE_MODIFIED + datetime.timedelta(hours=1))):
+    # check if cookie is unset (initial startup) or is expired (30+ mins old)
+    if (WHMCS_COOKIE == '' or datetime.datetime.utcnow() > (WHMCS_COOKIE_MODIFIED + datetime.timedelta(minutes=30))):
         # WHMCS cookie needs updating
         # need to get new WHMCS session, but first we need a temporary cookie
         url = 'https://www.whmcs.com/members/clientarea.php'
@@ -177,7 +179,7 @@ async def on_message(message):
     # handles if bot is mentioned
     if client.user.mentioned_in(message) and message.mention_everyone is False:
         return_msg = "Hello! I can check domains for valid WHMCS or Blesta licenses, enter `!license help` for usage."
-        await client.send_message(message.channel, return_msg)
+        await message.channel.send(return_msg)
         return
 
     # handles insufficient number of arguments and help command
@@ -195,14 +197,14 @@ async def on_message(message):
             return_msg += "\t`!blesta` - checks Blesta license validity\n\nCreated by Mason Rowe (https://rowe.sh)"
         if (return_msg != ""):
             # if return message is set, return the error/help message and exit
-            await client.send_message(message.channel, return_msg)
+            await message.channel.send(return_msg)
             return
         # extract domain from message and santize common mistakes
         domain = message_split[1].replace('http://','').replace('https://','')
         if (domain[:4] == 'www.'):
             domain = domain[4:]
-        if (domain[-1] == '/'):
-            domain = domain[:-1]
+        if ('/' in domain):
+            domain = domain.split('/')[0]
         
     else:
         # terminate early if message is not a bot command
@@ -224,21 +226,21 @@ async def on_message(message):
                 # license is either invalid or resulted in error
                 embed = create_embed(domain, whmcs_result, "WHMCS / Blesta")
         # reply in Discord chat with results
-        await client.send_message(message.channel, embed=embed)
+        await message.channel.send(embed=embed)
     # handles "!whmcs" chat command
     # checks only WHMCS license for validity
     elif message.content.startswith('!whmcs'):
         whmcs_result = check_domain(domain, 'whmcs')
         embed = create_embed(domain, whmcs_result, "WHMCS")
         # reply in Discord chat with results
-        await client.send_message(message.channel, embed=embed)
+        await message.channel.send(embed=embed)
     # handles "!blesta" chat command
     # checks only Blesta license for validity
     elif message.content.startswith('!blesta'):
         blesta_result = check_domain(domain, 'blesta')
         embed = create_embed(domain, blesta_result, "Blesta")
         # reply in Discord chat with results
-        await client.send_message(message.channel, embed=embed)
+        await message.channel.send(embed=embed)
 
 # on_ready()
 #   Purpose: Runs after Discord bot has connected to the server
